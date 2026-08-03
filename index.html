@@ -4,6 +4,8 @@
     <meta charset="UTF-8">
     <title>TT练字帖</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="这是一个在线田字格练字帖生成器。输入汉字，即可一键生成带有笔顺示范或纯文字描红的练字帖，支持红/绿/黑配色，打印效果清晰，标准 A4 纸适配。">
+    <meta name="keywords" content="田字格,练字帖,汉字笔顺,字帖生成器,在线练字,打印字帖">
     <style>
         body {
             font-family: "微软雅黑", "楷体", "Kaiti SC", STKaiti, sans-serif;
@@ -187,6 +189,22 @@
             font-size: 16px;
         }
         .modal-content .close-btn:hover { background: #ddd; }
+
+        /* 打印预览模态框样式 – 调整为大窗口 */
+        .preview-content {
+            max-width: 98% !important;   /* 宽度接近全屏 */
+            width: 98% !important;
+            padding: 15px 20px !important;
+            text-align: left;
+            max-height: 90vh;            /* 限制总高度，以防超出屏幕 */
+            overflow-y: auto;            /* 模态框本身可滚动 */
+        }
+        .preview-content iframe {
+            border: 1px solid #ccc;
+            background: white;
+            height: 75vh;                /* 增加高度，显示更多内容 */
+            width: 100%;
+        }
     </style>
 </head>
 <body>
@@ -262,6 +280,21 @@
         <button class="close-btn" id="closeDonate">关闭</button>
     </div>
 </div>
+
+<!-- 打印预览模态框（大窗口） -->
+<div class="modal-overlay" id="previewModal">
+    <div class="modal-content preview-content">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
+            <span style="font-size:20px;font-weight:bold;">打印预览</span>
+            <button id="closePreview" style="background:#eee;border:none;padding:5px 15px;border-radius:6px;cursor:pointer;">关闭</button>
+        </div>
+        <iframe id="previewFrame" srcdoc=""></iframe>
+        <button id="printBtnInModal" style="margin-top:10px;height:44px;padding:0 24px;font-size:18px;background:#00b050;color:white;border:none;border-radius:6px;cursor:pointer;">🖨️ 打印</button>
+    </div>
+</div>
+
+<!-- 隐藏的打印 iframe -->
+<iframe id="printFrame" style="display:none;" srcdoc=""></iframe>
 
 <script>
     (function() {
@@ -439,13 +472,6 @@
         vertical-align: top;
     }
     li.svg svg { vertical-align: middle; }
-    .print-btn-container { margin: 20px; text-align: center; }
-    .print-btn-container button {
-        height: 44px; padding: 0 24px; font-size: 18px;
-        background: #00b050; color: white; border: none;
-        border-radius: 6px; cursor: pointer;
-    }
-    .print-btn-container button:hover { background: #008040; }
     @media print {
         .print-btn-container { display: none; }
         * { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
@@ -455,20 +481,45 @@
 </head>
 <body>
     ${pagesContent}
-    <div class="print-btn-container">
-        <button onclick="window.print()">🖨️ 打印预览</button>
-    </div>
 </body>
 </html>`;
 
-            const win = window.open('', '_blank', 'width=1000,height=700');
-            if (win) {
-                win.document.write(previewHTML);
-                win.document.close();
-                win.focus();
-            } else {
-                alert('弹窗被拦截，请允许本站弹窗或手动打开打印');
+            const printFrame = document.getElementById('printFrame');
+            const previewFrame = document.getElementById('previewFrame');
+            
+            // 使用 srcdoc 避免跨域问题
+            if (previewFrame) {
+                previewFrame.srcdoc = previewHTML;
             }
+            if (printFrame) {
+                printFrame.srcdoc = previewHTML;
+            }
+
+            // 显示预览模态框
+            const previewModal = document.getElementById('previewModal');
+            previewModal.classList.add('show');
+
+            // 打印按钮 (重新绑定，避免多次生成叠加)
+            const printBtn = document.getElementById('printBtnInModal');
+            const newPrintBtn = printBtn.cloneNode(true);
+            printBtn.parentNode.replaceChild(newPrintBtn, printBtn);
+            newPrintBtn.addEventListener('click', function() {
+                if (printFrame) {
+                    printFrame.contentWindow.focus();
+                    printFrame.contentWindow.print();
+                }
+            });
+
+            // 关闭预览 (重新绑定)
+            const closeBtn = document.getElementById('closePreview');
+            const newCloseBtn = closeBtn.cloneNode(true);
+            closeBtn.parentNode.replaceChild(newCloseBtn, closeBtn);
+            newCloseBtn.addEventListener('click', function() {
+                previewModal.classList.remove('show');
+            });
+            previewModal.onclick = function(e) {
+                if (e.target === previewModal) previewModal.classList.remove('show');
+            };
         }
 
         async function generate() {
