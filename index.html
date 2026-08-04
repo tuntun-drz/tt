@@ -43,6 +43,8 @@
             align-items: center;
             gap: 15px;
         }
+
+        /* 输入框容器：使用 flex 实现内容垂直居中 */
         .controls .input-area {
             width: 100%;
             height: 2.4cm;
@@ -54,20 +56,36 @@
             font-family: "楷体", "Kaiti SC", STKaiti, serif;
             box-sizing: border-box;
             overflow-y: auto;
-            display: flex;
-            align-items: center;
-            justify-content: center;
             word-break: break-all;
-            padding: 5px 10px;
-            line-height: 1.5;
+            padding: 4px 10px;
+            line-height: 1.5;                /* 正常的行距 */
             cursor: text;
             background: white;
+            position: relative;               /* 为占位符提供定位参考 */
+            display: flex;                   /* 使用 flex 让输入的文本也能垂直居中 */
+            align-items: center;
+            justify-content: center;
         }
+        /* 占位符：绝对定位居中，点击或输入时隐藏 */
         .controls .input-area:empty::before {
             content: "请输入需要练习的汉字";
             color: #aaaaaa;
             pointer-events: none;
+            position: absolute;
+            left: 50%;
+            top: 50%;
+            transform: translate(-50%, -50%);
+            line-height: 1.5;
+            width: 100%;
+            padding: 0 10px;
+            box-sizing: border-box;
+            white-space: nowrap;
         }
+        /* 获得焦点时隐藏占位符 */
+        .controls .input-area.focused:empty::before {
+            display: none;
+        }
+
         .controls .row {
             display: flex;
             justify-content: center;
@@ -328,6 +346,16 @@
             fangsong: '"仿宋",FangSong,"Fangsong SC",STFangsong,serif',
             xingkai:  '"华文行楷","STXingkai","Kaiti SC",STKaiti,"楷体",serif'
         };
+
+        // ---- 修复占位符在获得焦点时消失 ----
+        charInput.addEventListener('focus', () => {
+            charInput.classList.add('focused');
+        });
+        charInput.addEventListener('blur', () => {
+            if (charInput.textContent.trim() === '') {
+                charInput.classList.remove('focused');
+            }
+        });
 
         function toggleFontSelect() {
             fontSelect.disabled = strokeOrderCheck.checked;
